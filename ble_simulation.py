@@ -1,7 +1,7 @@
 import numpy as np
 
 # Define constants
-num_simulations = 1000
+num_simulations = 10000
 
 class LostDevice:
     def __init__(self, env, period, beacon_duration, beacon_events):
@@ -86,6 +86,26 @@ class Simulation:
             # Discovery has happened
             if a <= y_k <= b:
                 return y_k
+            
+def calculate_ci_bootstrapping(data, num_iterations=1000, confidence_level=0.95):
+  """
+  Calculates confidence interval for average latency using bootstrapping.
+
+  Args:
+      data: List of simulated latency values for a specific L value.
+      num_iterations: Number of resampled datasets to generate (default 1000).
+      confidence_level: Desired confidence level for the interval (default 0.95).
+
+  Returns:
+      Tuple containing lower and upper confidence limit for the average latency.
+  """
+  resampled_latencies = []
+  for _ in range(num_iterations):
+    resample = np.random.choice(data, size=len(data), replace=True)  # Resample with replacement
+    resampled_latencies.append(np.mean(resample))  # Calculate average latency for resampled set
+
+  percentiles = np.percentile(resampled_latencies, [confidence_level * 100 / 2, 100 - confidence_level * 100 / 2])
+  return percentiles[0], percentiles[1]  # Lower and upper confidence limit
                 
 def run_simulation(period, beacon_duration, rate):
     latency_results = []
@@ -95,4 +115,9 @@ def run_simulation(period, beacon_duration, rate):
         latency_results.append(simulation.run())
 
     avg_latency = np.mean(latency_results)
-    return avg_latency
+    lower_ci, upper_ci = calculate_ci_bootstrapping(latency_results)
+    return {
+        "avg_latency": avg_latency,
+        "lower_ci": lower_ci,
+        "upper_ci": upper_ci
+    }
