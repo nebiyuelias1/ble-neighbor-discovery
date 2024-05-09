@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Define constants
 num_simulations = 10000
@@ -106,6 +107,41 @@ def calculate_ci_bootstrapping(data, num_iterations=1000, confidence_level=0.95)
 
   percentiles = np.percentile(resampled_latencies, [confidence_level * 100 / 2, 100 - confidence_level * 100 / 2])
   return percentiles[0], percentiles[1]  # Lower and upper confidence limit
+
+def calculate_ci(latency_results):
+    """
+    Calculate the confidence interval for the average latency using the formula: ci = avg_latency ± z * std_dev / sqrt(n)
+    
+    Params:
+        latency_results: List of latency values from the simulation
+        
+    Returns:
+        Tuple containing the lower and upper confidence interval
+    """
+    # Calculate confidence interval using formula and std deviation
+    std_dev = np.std(latency_results)
+    z_value = 1.96  # 95% confidence interval
+    avg_latency = np.mean(latency_results)
+    lower_ci = avg_latency - z_value * std_dev / np.sqrt(num_simulations)
+    upper_ci = avg_latency + z_value * std_dev / np.sqrt(num_simulations)
+    
+    return lower_ci, upper_ci
+
+def draw_histogram(latency_results, period, beacon_duration, rate):
+    """Draw histogram plot of the latency results.
+
+    Args:
+        latency_results (array): array of latency values
+        period (number): The period of the beacon event
+        beacon_duration (number): The duration of the beacon event
+        rate (number): The rate of scanning events
+    """
+    # Plot the histogram of the latency results
+    plt.hist(latency_results, bins=100)
+    plt.xlabel("Latency")
+    plt.ylabel("Frequency")
+    plt.title(f"Histogram of Latency Results with L={period}, ω={beacon_duration}, λ={rate}")
+    plt.show()
                 
 def run_simulation(period, beacon_duration, rate):
     latency_results = []
@@ -113,8 +149,9 @@ def run_simulation(period, beacon_duration, rate):
     for _ in range(num_simulations):
         simulation = Simulation(rate, beacon_duration, period)
         latency_results.append(simulation.run())
-
+    
     avg_latency = np.mean(latency_results)
+    
     lower_ci, upper_ci = calculate_ci_bootstrapping(latency_results)
     return {
         "avg_latency": avg_latency,
