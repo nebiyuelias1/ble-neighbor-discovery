@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Define constants
-num_simulations = 10000
+num_simulations = 1000
 
 class LostDevice:
     def __init__(self, env, period, beacon_duration, beacon_events):
@@ -60,7 +60,7 @@ class Simulation:
         self.beacon_duration = beacon_duration
         self.beacon_period = beacon_period
         
-    def run(self):
+    def run(self, arr):
         # The time of the kth scanning event
         y_k = 0
         # The index of the beacon event
@@ -71,6 +71,7 @@ class Simulation:
             # Start by drawing a random number from the exponential distribution
             # Then keep adding this to y_k until it exceeds the beacon event bounds.
             x_i = np.random.exponential(scale=1/self.rate)
+            print(f'X_i: {x_i}')
             y_k += x_i
             
             # The left and right bounds of the beacon event
@@ -86,9 +87,11 @@ class Simulation:
 
             # Discovery has happened
             if a <= y_k <= b:
+                arr[n_i-1] += 1
+                print(f'Discovery has happened after beacon: {n_i}, time: {y_k}')
                 return y_k
             
-def calculate_ci_bootstrapping(data, num_iterations=1000, confidence_level=0.95):
+def calculate_ci_bootstrapping(data, num_iterations=100, confidence_level=0.95):
   """
   Calculates confidence interval for average latency using bootstrapping.
 
@@ -127,7 +130,7 @@ def calculate_ci(latency_results):
     
     return lower_ci, upper_ci
 
-def draw_histogram(latency_results, period, beacon_duration, rate):
+def draw_histogram(arr, period, beacon_duration, rate):
     """Draw histogram plot of the latency results.
 
     Args:
@@ -137,7 +140,7 @@ def draw_histogram(latency_results, period, beacon_duration, rate):
         rate (number): The rate of scanning events
     """
     # Plot the histogram of the latency results
-    plt.hist(latency_results, bins=100)
+    plt.hist(arr, bins=100)
     plt.xlabel("Latency")
     plt.ylabel("Frequency")
     plt.title(f"Histogram of Latency Results with L={period}, ω={beacon_duration}, λ={rate}")
@@ -146,13 +149,30 @@ def draw_histogram(latency_results, period, beacon_duration, rate):
 def run_simulation(period, beacon_duration, rate):
     latency_results = []
 
+    arr = [0] * 100000
     for _ in range(num_simulations):
+        
         simulation = Simulation(rate, beacon_duration, period)
-        latency_results.append(simulation.run())
+        latency_results.append(simulation.run(arr))
+
+    beacon_distribution = []
+    for i in range(1, len(arr)):
+        if arr[i-1] > 0:
+            beacon_distribution.extend([i] * arr[i-1])
+        
+    # Draw histogram plot of beacon_distribution
+    # counts, bins = np.histogram(beacon_distribution)
+    plt.hist(beacon_distribution)
+    plt.xlabel("Beacon Event")
+    plt.ylabel("Frequency")
+    plt.title(f"Histogram of Beacon Event Distribution with L={period}, ω={beacon_duration}, λ={rate}")
+    plt.show()
+        
+    # draw_histogram(latency_results, period, beacon_duration, rate)
     
     avg_latency = np.mean(latency_results)
     
-    lower_ci, upper_ci = calculate_ci_bootstrapping(latency_results)
+    lower_ci, upper_ci = calculate_ci(latency_results)
     return {
         "avg_latency": avg_latency,
         "lower_ci": lower_ci,
