@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Define constants
-num_simulations = 1000
+num_simulations = 10000
 
 class LostDevice:
     def __init__(self, env, period, beacon_duration, beacon_events):
@@ -65,6 +65,7 @@ class Simulation:
         y_k = 0
         # The index of the beacon event
         n_i = 1
+        arr_y_ks = []
         
         while True:
             # The time since the last scanning event
@@ -73,6 +74,7 @@ class Simulation:
             x_i = np.random.exponential(scale=1/self.rate)
             print(f'X_i: {x_i}')
             y_k += x_i
+            arr_y_ks.append(y_k)
             
             # The left and right bounds of the beacon event
             a = n_i * self.beacon_period - self.beacon_duration / 2
@@ -88,7 +90,8 @@ class Simulation:
             # Discovery has happened
             if a <= y_k <= b:
                 arr[n_i-1] += 1
-                print(f'Discovery has happened after beacon: {n_i}, time: {y_k}')
+                print(f'Discovery has happened after beacon: {n_i}, time: {y_k}, a: {a}, b: {b}')
+                # draw_neighbor_discovery_process(self.beacon_period, self.beacon_duration, n_i, arr_y_ks)
                 return y_k
 
 
@@ -124,21 +127,22 @@ def calculate_ci_bootstrapping(data, confidence_level=0.95):
     """
     Calculates confidence interval for average latency using bootstrapping.
 
-  Args:
-      data: List of simulated latency values for a specific L value.
-      num_iterations: Number of resampled datasets to generate (default 1000).
-      confidence_level: Desired confidence level for the interval (default 0.95).
+    Args:
+        data: List of simulated latency values for a specific L value.
+        num_iterations: Number of resampled datasets to generate (default 1000).
+        confidence_level: Desired confidence level for the interval (default 0.95).
 
-  Returns:
-      Tuple containing lower and upper confidence limit for the average latency.
-  """
-  resampled_latencies = []
-  for _ in range(num_iterations):
-    resample = np.random.choice(data, size=len(data), replace=True)  # Resample with replacement
-    resampled_latencies.append(np.mean(resample))  # Calculate average latency for resampled set
+    Returns:
+        Tuple containing lower and upper confidence limit for the average latency.
+    """
+    resampled_latencies = []
+    for _ in range(num_simulations):
+        resample = np.random.choice(data, size=len(data), replace=True)  # Resample with replacement
+        resampled_latencies.append(np.mean(resample))  # Calculate average latency for resampled set
 
-  percentiles = np.percentile(resampled_latencies, [confidence_level * 100 / 2, 100 - confidence_level * 100 / 2])
-  return percentiles[0], percentiles[1]  # Lower and upper confidence limit
+    percentiles = np.percentile(resampled_latencies, [confidence_level * 100 / 2, 100 - confidence_level * 100 / 2])
+    return percentiles[0], percentiles[1]  # Lower and upper confidence limit
+
 
 def calculate_ci(latency_results):
     """
@@ -154,8 +158,8 @@ def calculate_ci(latency_results):
     std_dev = np.std(latency_results)
     z_value = 1.96  # 95% confidence interval
     avg_latency = np.mean(latency_results)
-    lower_ci = avg_latency - z_value * std_dev / np.sqrt(num_simulations)
-    upper_ci = avg_latency + z_value * std_dev / np.sqrt(num_simulations)
+    lower_ci = avg_latency - z_value * (std_dev / np.sqrt(num_simulations))
+    upper_ci = avg_latency + z_value * (std_dev / np.sqrt(num_simulations))
     
     return lower_ci, upper_ci
 
@@ -188,20 +192,11 @@ def run_simulation(period, beacon_duration, rate):
     for i in range(1, len(arr)):
         if arr[i-1] > 0:
             beacon_distribution.extend([i] * arr[i-1])
-        
-    # Draw histogram plot of beacon_distribution
-    # counts, bins = np.histogram(beacon_distribution)
-    plt.hist(beacon_distribution)
-    plt.xlabel("Beacon Event")
-    plt.ylabel("Frequency")
-    plt.title(f"Histogram of Beacon Event Distribution with L={period}, ω={beacon_duration}, λ={rate}")
-    plt.show()
-        
-    # draw_histogram(latency_results, period, beacon_duration, rate)
     
     avg_latency = np.mean(latency_results)
     
     lower_ci, upper_ci = calculate_ci(latency_results)
+
     return {
         "avg_latency": avg_latency,
         "lower_ci": lower_ci,
