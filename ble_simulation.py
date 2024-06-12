@@ -90,10 +90,39 @@ class Simulation:
                 arr[n_i-1] += 1
                 print(f'Discovery has happened after beacon: {n_i}, time: {y_k}')
                 return y_k
-            
-def calculate_ci_bootstrapping(data, num_iterations=100, confidence_level=0.95):
-  """
-  Calculates confidence interval for average latency using bootstrapping.
+
+
+def draw_neighbor_discovery_process(L, omega, n_beacons_top, t_scans):
+    t_top = [i*L for i in range(n_beacons_top+1)]
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    # Draw top timeline beacons
+    ax.vlines(t_top, ymin=0.5, ymax=1.0, color='blue', label='Advertising Beacons')
+    ax.plot(t_top, np.ones_like(t_top) * 0.75, 'bo')
+
+    # Draw bottom timeline beacons
+    ax.vlines(t_scans, ymin=0.0, ymax=0.5, color='red', label='Scanning Events')
+    ax.plot(t_scans, np.ones_like(t_scans) * 0.25, 'ro')
+
+    # Highlight nth beacon
+    ax.axvspan(t_top[-1] - omega / 2, t_top[-1] + omega / 2, color='green', alpha=0.3)
+
+    # Add labels and grid
+    ax.set_xlabel('Time (t)')
+    ax.set_yticks([0.25, 0.75])
+    ax.set_yticklabels(['Bottom Beacons', 'Top Beacons'])
+    # ax.set_xticks(np.arange(0, max(t_top[-1], t_scans[-1]) + omega, omega))
+    ax.grid(True)
+
+    plt.legend()
+    plt.title('Bluetooth Neighbor Discovery')
+    plt.show()
+
+
+def calculate_ci_bootstrapping(data, confidence_level=0.95):
+    """
+    Calculates confidence interval for average latency using bootstrapping.
 
   Args:
       data: List of simulated latency values for a specific L value.
