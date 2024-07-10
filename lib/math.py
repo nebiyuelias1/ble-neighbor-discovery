@@ -1,5 +1,6 @@
+import math
 import numpy as np
-from scipy.special import gammaln
+from scipy.special import gammaln, gammainc
 from scipy.integrate import quad
 
 def erlang_pdf(x, k, lambd):
@@ -19,9 +20,20 @@ def erlang_pdf(x, k, lambd):
     log_pdf = (k * np.log(lambd) + (k - 1) * np.log(x) - lambd * x - gammaln(k))
     return np.exp(log_pdf)
 
-def poisson_pmf(k, nL, lambda_):
-    return (nL*lambda_)**k * np.exp(-nL*lambda_) / np.math.factorial(k)
+def erlang_k_cdf(k, lam, t):
+    """Calculate the CDF of the Erlang-k distribution at time t."""
+    return gammainc(k, lam * t)
 
+def erlang_k_interval_probability(k, lam, nL, delta):
+    """Calculate the probability that the kth event happens in the interval [nL - delta, nL + delta]."""
+    cdf_upper = erlang_k_cdf(k, lam, nL + delta)
+    cdf_lower = erlang_k_cdf(k, lam, nL - delta)
+    return cdf_upper - cdf_lower
+
+def poisson_pmf(k, nL, lambda_):
+    # Use logarithms to compute the PMF for large k
+    log_pmf = k * np.log(nL * lambda_) - (nL * lambda_) - gammaln(k + 1)
+    return np.exp(log_pmf)
 
 def analytical_latency_result(n_limit, k_limit, interval, omega, rate):
     P_n = []
@@ -32,8 +44,10 @@ def analytical_latency_result(n_limit, k_limit, interval, omega, rate):
 
         sum_k = 0
         for k in range(1, k_limit + 1):
-            erlang_pdf_res, error = quad(erlang_pdf, lower_bound, upper_bound, args=(k, rate))
-            sum_k += erlang_pdf_res
+            # erlang_pdf_res, error = quad(erlang_pdf, lower_bound, upper_bound, args=(k, rate))
+            erlang_pdf_res = erlang_k_interval_probability(k, rate, n * interval, omega/2)
+            sum_k +=  erlang_pdf_res 
+
         P_n.append(sum_k)
 
     latency = 0

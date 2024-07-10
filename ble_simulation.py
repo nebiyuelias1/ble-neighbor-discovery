@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Define constants
-num_simulations = 10000
+num_simulations = 100000
 
 class LostDevice:
     def __init__(self, env, period, beacon_duration, beacon_events):
@@ -72,7 +72,7 @@ class Simulation:
             # Start by drawing a random number from the exponential distribution
             # Then keep adding this to y_k until it exceeds the beacon event bounds.
             x_i = np.random.exponential(scale=1/self.rate)
-            print(f'X_i: {x_i}')
+            # print(f'X_i: {x_i}')
             y_k += x_i
             arr_y_ks.append(y_k)
             
@@ -90,7 +90,7 @@ class Simulation:
             # Discovery has happened
             if a <= y_k <= b:
                 arr[n_i-1] += 1
-                print(f'Discovery has happened after beacon: {n_i}, time: {y_k}, a: {a}, b: {b}')
+                # print(f'Discovery has happened after beacon: {n_i}, time: {y_k}, a: {a}, b: {b}')
                 # draw_neighbor_discovery_process(self.beacon_period, self.beacon_duration, n_i, arr_y_ks)
                 return y_k
 
@@ -114,12 +114,12 @@ def draw_neighbor_discovery_process(L, omega, n_beacons_top, t_scans):
     # Add labels and grid
     ax.set_xlabel('Time (t)')
     ax.set_yticks([0.25, 0.75])
-    ax.set_yticklabels(['Bottom Beacons', 'Top Beacons'])
+    ax.set_yticklabels(['Scanning Events', 'Advertising Beacons'])
     # ax.set_xticks(np.arange(0, max(t_top[-1], t_scans[-1]) + omega, omega))
     ax.grid(True)
 
     plt.legend()
-    plt.title('Bluetooth Neighbor Discovery')
+    plt.title(f'Bluetooth Neighbor Discovery, L={L}, ω={omega}, n={n_beacons_top}')
     plt.show()
 
 
