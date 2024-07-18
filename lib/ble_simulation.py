@@ -95,7 +95,9 @@ class Simulation:
                 arr[n_i-1] += 1
                 # print(f'Discovery has happened after beacon: {n_i}, time: {y_k}, a: {a}, b: {b}')
                 # draw_neighbor_discovery_process(self.beacon_period, self.beacon_duration, n_i, arr_y_ks)
-                total_energy_cost = n_i * energy_cost_of_beacon + (len(arr_y_ks) * energy_cost_of_scanning)
+                total_energy_cost = n_i * energy_cost_of_beacon * \
+                    self.beacon_duration + \
+                    (len(arr_y_ks) * energy_cost_of_scanning)
                 if (include_energy_cost):
                     return y_k, total_energy_cost
                 

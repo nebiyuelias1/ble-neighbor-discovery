@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import gammaln, gammainc
 from scipy.integrate import quad
-from scipy.optimize import      
+from scipy.optimize import minimize
 
 def erlang_pdf(x, k, lambd):
     """
@@ -37,7 +37,7 @@ def poisson_pmf(k, nL, lambda_):
     log_pmf = k * np.log(nL * lambda_) - (nL * lambda_) - gammaln(k + 1)
     return np.exp(log_pmf)
 
-def P_n(k_limit, interval, omega, rate, n):
+def probability_of_matching_with_beacon_n(k_limit, interval, omega, rate, n):
     sum_k = 0
     for k in range(1, k_limit + 1):
         # erlang_pdf_res, error = quad(erlang_pdf, lower_bound, upper_bound, args=(k, rate))
@@ -45,14 +45,16 @@ def P_n(k_limit, interval, omega, rate, n):
         sum_k +=  erlang_pdf_res
     return sum_k
 
-def analytical_latency_result(n_limit, k_limit, interval, omega, rate):
+def analytical_latency_result(params, n_limit, k_limit):
+    interval, omega, rate = params
+    
     P_n = []
     
     for n in range(1, n_limit + 1):
         lower_bound = n * interval - omega/2
         upper_bound = n * interval + omega/2
 
-        sum_k = P_n(k_limit, interval, omega, rate, n) 
+        sum_k = probability_of_matching_with_beacon_n(k_limit, interval, omega, rate, n) 
 
         P_n.append(sum_k)
 
@@ -69,18 +71,37 @@ def analytical_latency_result(n_limit, k_limit, interval, omega, rate):
             
     return latency
 
+def average_energy_consumption(params):
+    L, omega, lambda_ = params
+    # Constants
+    c1 = 1
+    c2 = 0.5
+    c3 = 20
+    c4 = 0.1
+    c5 = 0.05
+    c6 = 5
+    c7 = 0.15
+    c8 = 0.25
+    c9 = 0.1
+    energy_used = (c1 * L + c2 * omega + c3 * lambda_ + 
+                      c4 * L**2 + c5 * omega**2 + c6 * lambda_**2 + 
+                      c7 * L * omega + c8 * L * lambda_ + c9 * omega * lambda_)
+    return energy_used
+
 # Define the energy constraint function
-def energy_constraint(params, E_t, E_budget, n_max=100, k_max=100):
-    L, omega, lambd = params
-    energy_used = E_t * sum(n * L * P(n, L, omega, lambd, k_max) for n in range(1, n_max + 1))
-    return E_budget - energy_used
+def energy_constraint(params, E_t, E_budget, n_max, k_max):
+    L, omega, lambda_ = params
+    # energy_used = E_t * int(analytical_latency_result(params, n_max, k_max) / L)
+    # print(f'energy used: {energy_used} for params: {params}')
+    # return E_budget - energy_used
+    
+    return E_budget - average_energy_consumption(params)
 
-
-def minimize_latency():
+def minimize_latency(n_limit, k_limit):
     # Parameters and bounds
     E_t = 1.0 
-    E_budget = 100.0
-    L_bounds = (0.1, 10.0)
+    E_budget = 20.0
+    L_bounds = (2.0, 10.0)
     omega_bounds = (0.01, 1.0)
     lambda_bounds = (0.01, 1.0)
 
@@ -88,7 +109,7 @@ def minimize_latency():
     constraints = ({
         'type': 'ineq',
         'fun': energy_constraint,
-        'args': (E_t, E_budget)
+        'args': (E_t, E_budget, n_limit, k_limit)
     })
 
     initial_guess = [1.0, 0.1, 0.5]
@@ -96,7 +117,8 @@ def minimize_latency():
     bounds = [L_bounds, omega_bounds, lambda_bounds]
     
     result = minimize(analytical_latency_result, 
-                      x0=initial_guess, 
+                      x0=initial_guess,
+                      args=(n_limit, k_limit),
                       bounds=bounds,
                       constraints=constraints,
                       method='SLSQP')
