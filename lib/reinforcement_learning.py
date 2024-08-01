@@ -47,7 +47,11 @@ class BluetoothDiscoveryEnv(gym.Env):
         # Episode termination condition
         done = latency < 20.0  # Example condition
         
-        return self.state, reward, done, False, {}
+        info = {
+            'latency': latency,
+            'energy': energy
+        }
+        return self.state, reward, done, False, info
     
     def calculate_latency(self, lambda_):
         params = (self.L, self.omega, lambda_)
