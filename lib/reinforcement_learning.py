@@ -51,7 +51,7 @@ class BluetoothDiscoveryEnv(gym.Env):
     
     def calculate_latency(self, lambda_):
         params = (self.L, self.omega, lambda_)
-        latency = analytical_latency_result(params, 1000, 1000)
+        latency = analytical_latency_result(params, 100, 100)
         return latency
     
     def calculate_energy(self, lambda_):
