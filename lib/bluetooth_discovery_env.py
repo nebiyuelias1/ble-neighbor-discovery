@@ -33,6 +33,10 @@ class BluetoothDiscoveryEnv(gym.Env):
         self.alpha = 0.5
         self.beta = 0.5
         
+        # Define max steps per episode
+        self.max_steps = 100  # Example value, adjust as needed
+        self.current_step = 0  # Initialize current step
+        
     def step(self, action):
         # Extract action values
         omega, L, lambda_ = action
@@ -49,8 +53,14 @@ class BluetoothDiscoveryEnv(gym.Env):
         # to transform a minimization problem into a maximization one.
         reward = - (self.alpha * latency + self.beta * energy)
 
+        # Additional reward for significant improvements
+        if latency < 10.0:
+            reward += 10.0  # Bonus for very low latency
+        if energy < 5.0:
+            reward += 5.0  # Bonus for very low energy consumption
+
         # Episode termination condition
-        done = latency < 20.0  # Example condition
+        done = latency < 15.0 or energy > 50.0 or self.current_step >= self.max_steps
         
         return observation, reward, done, False, info
     
@@ -85,6 +95,8 @@ class BluetoothDiscoveryEnv(gym.Env):
     def reset(self, **kwargs):
         # Reset the environment to initial state
         super().reset(**kwargs)
+        
+        self.current_step = 0  # Initialize current step
         
         # Randomly initialize the state
         omega = np.random.uniform(OMEGA_LOW, OMEGA_HIGH)
