@@ -9,7 +9,7 @@ OMEGA_LOW = 0.1
 OMEGA_HIGH = 2.5
 L_LOW = 1.0
 L_HIGH = 10.0
-LAMBDA_LOW = 0.01
+LAMBDA_LOW = 0.1
 LAMBDA_HIGH = 1.0
 
 class BluetoothDiscoveryEnv(gym.Env):
