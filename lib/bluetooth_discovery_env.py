@@ -6,7 +6,7 @@ from lib.math import analytical_latency_result, average_energy_consumption
 
 # Define low and high values for parameters
 OMEGA_LOW = 0.1
-OMEGA_HIGH = 2.5
+OMEGA_HIGH = 1.9
 L_LOW = 1.0
 L_HIGH = 10.0
 LAMBDA_LOW = 0.1
