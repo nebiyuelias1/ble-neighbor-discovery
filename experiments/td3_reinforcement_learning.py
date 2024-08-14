@@ -17,7 +17,7 @@ env.reset()
 
 model  = TD3("MultiInputPolicy", env, verbose=1, tensorboard_log=logdir)
 
-TIMESTEPS = 10000
+TIMESTEPS = 1000
 iters = 0
 
 for i in range(30):
