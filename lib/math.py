@@ -66,9 +66,13 @@ def analytical_latency_result(params, n_limit, k_limit):
         bernouli_prob =  P_n[n] * probability_of_no_match
         bernouli_probabilities.append(bernouli_prob)
         latency += time_duration * bernouli_prob
-    print(f'latency: {latency}')
-    print(f'sum (P_n): {sum(bernouli_probabilities)}')
-            
+    # print(f'latency: {latency}')
+    # print(f'sum (P_n): {sum(bernouli_probabilities)}')
+    
+    # Print params if latency is nan
+    if np.isnan(latency):
+        print('nan found:')
+        print(params)
     return latency
 
 def average_energy_consumption(params):
