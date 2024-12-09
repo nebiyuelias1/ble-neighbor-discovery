@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Define constants
-num_simulations = 100000
+num_simulations = 10000
 energy_cost_of_beacon = 0.01
 energy_cost_of_scanning = 2.0
 
@@ -172,7 +173,7 @@ def calculate_ci(latency_results):
     
     return lower_ci, upper_ci
 
-def draw_histogram(arr, period, beacon_duration, rate):
+def draw_histogram(arr, period, beacon_duration, rate, mean_latency, std_latency):
     """Draw histogram plot of the latency results.
 
     Args:
@@ -182,10 +183,32 @@ def draw_histogram(arr, period, beacon_duration, rate):
         rate (number): The rate of scanning events
     """
     # Plot the histogram of the latency results
-    plt.hist(arr, bins=100)
-    plt.xlabel("Latency")
-    plt.ylabel("Frequency")
-    plt.title(f"Histogram of Latency Results with L={period}, ω={beacon_duration}, λ={rate}")
+    sns.histplot(arr, bins=30, stat="density", kde=True, color="blue")
+    
+    # Annotate the mean and standard deviation
+    plt.axvline(mean_latency, color='red', linestyle='--', label=f"Mean = {mean_latency:.2f}", linewidth=2)
+    plt.axvline(mean_latency + std_latency, color='green', linestyle=':', label=f"Mean + 1 Std Dev = {mean_latency + std_latency:.2f}", linewidth=2)
+    plt.axvline(mean_latency - std_latency, color='brown', linestyle=':', label=f"Mean - 1 Std Dev = {mean_latency - std_latency:.2f}", linewidth=2)
+
+    plt.xlabel("Discovery Latency")
+    plt.ylabel("Probability Density")
+    # plt.title("Normalized Histogram Representing Latency PDF")
+    plt.legend(fontsize='large')
+    plt.show()
+
+    # Sort data for the CDF
+    sorted_latencies = np.sort(arr)
+    cdf = np.arange(1, len(sorted_latencies) + 1) / len(sorted_latencies)
+
+    # Plot the CDF
+    plt.figure(figsize=(8, 6))
+    plt.plot(sorted_latencies, cdf, marker='o', linestyle='-', color='blue', label="Empirical CDF")
+    plt.axvline(mean_latency, color='red', linestyle='--', label=f"Mean = {mean_latency:.2f}")
+    plt.xlabel("Discovery Latency")
+    plt.ylabel("Cumulative Probability")
+    # plt.title("Cumulative Distribution Function (CDF) of Discovery Latency")
+    plt.legend(fontsize='large')
+    plt.grid()
     plt.show()
                 
 def run_simulation(period, beacon_duration, rate, include_energy_cost=False):
@@ -210,8 +233,9 @@ def run_simulation(period, beacon_duration, rate, include_energy_cost=False):
             beacon_distribution.extend([i] * arr[i-1])
     
     avg_latency = np.mean(latency_results)
+    std_latency = np.std(latency_results)
+    draw_histogram(latency_results, period, beacon_duration, rate, avg_latency, std_latency)
     avg_energy_cost = np.mean(energy_cost_results) if include_energy_cost else None
-    
     lower_ci, upper_ci = calculate_ci(latency_results)
 
     return {
